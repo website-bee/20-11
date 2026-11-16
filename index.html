@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <!-- Lớp hiệu ứng cánh hoa rơi 3D -->
+  <!-- Lớp hiệu ứng cánh hoa rơi nhẹ nhàng -->
   <canvas id="petalCanvas" aria-hidden="true"></canvas>
 
   <!-- Nút bật/tắt nhạc nền "Người Gieo Mầm Xanh" nhỏ gọn góc trên phải -->
@@ -23,7 +23,7 @@
   <!-- Thẻ audio dự phòng nếu có file mp3 trong thư mục -->
   <audio id="bgAudioElement" preload="auto" loop></audio>
 
-  <!-- Hoa lá trang trí 3D nổi ở góc màn hình -->
+  <!-- Hoa lá trang trí góc màn hình -->
   <div class="ambient-florals" aria-hidden="true">
     <div class="corner-floral top-left">
       <svg viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -65,25 +65,200 @@
     </div>
   </div>
 
-  <!-- Không gian 3D trung tâm chứa cuốn sổ -->
+  <!-- Không gian 3D trung tâm -->
   <main class="stage-wrapper" id="stageWrapper">
-    <div class="book-scene" id="bookScene">
 
-      <!-- CUỐN SỔ 3D DUY NHẤT (Giữ nguyên khối 3D nghiêng cho cả bìa lẫn mọi lần lật trang) -->
+    <!-- ================= MÀN MỞ ĐẦU: BÔNG HOA NGHỆ THUẬT NỞ RA QUYỂN SÁCH ================= -->
+    <div class="flower-intro-stage" id="flowerIntroStage">
+      <div class="flower-intro-card" id="flowerTrigger" role="button" tabindex="0" aria-label="Nhấn vào bông hoa để hoa nở và mở sổ lưu bút">
+        <!-- Vầng sáng lan tỏa khi hoa nở -->
+        <div class="bloom-halo" aria-hidden="true"></div>
+
+        <!-- Hình vẽ Bông Hoa Mẫu Đơn / Anh Đào Nghệ Thuật (SVG nhiều tầng cánh nở) -->
+        <div class="bloom-flower-art" id="bloomFlower3D">
+          <svg class="flower-hero-svg" viewBox="-160 -160 320 320" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <!-- Gradient cho lá xanh -->
+              <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#aed581" />
+                <stop offset="60%" stop-color="#7cb342" />
+                <stop offset="100%" stop-color="#33691e" />
+              </linearGradient>
+
+              <!-- Gradient cho cánh hoa lớp ngoài -->
+              <radialGradient id="outerPetalGrad" cx="50%" cy="85%" r="85%">
+                <stop offset="0%" stop-color="#c2185b" />
+                <stop offset="40%" stop-color="#f06292" />
+                <stop offset="80%" stop-color="#f8bbd0" />
+                <stop offset="100%" stop-color="#fff0f6" />
+              </radialGradient>
+
+              <!-- Gradient cho cánh hoa lớp giữa -->
+              <radialGradient id="midPetalGrad" cx="50%" cy="85%" r="85%">
+                <stop offset="0%" stop-color="#ad1457" />
+                <stop offset="45%" stop-color="#ec407a" />
+                <stop offset="82%" stop-color="#f48fb1" />
+                <stop offset="100%" stop-color="#fce4ec" />
+              </radialGradient>
+
+              <!-- Gradient cho cánh hoa lớp trong cùng -->
+              <radialGradient id="innerPetalGrad" cx="50%" cy="85%" r="85%">
+                <stop offset="0%" stop-color="#d81b60" />
+                <stop offset="50%" stop-color="#f48fb1" />
+                <stop offset="90%" stop-color="#fce4ec" />
+                <stop offset="100%" stop-color="#ffffff" />
+              </radialGradient>
+
+              <!-- Gradient nhụy hoa vàng ấm -->
+              <radialGradient id="pistilGrad" cx="50%" cy="50%" r="55%">
+                <stop offset="0%" stop-color="#fffde7" />
+                <stop offset="55%" stop-color="#ffd54f" />
+                <stop offset="100%" stop-color="#f57f17" />
+              </radialGradient>
+
+              <!-- Hình dáng 1 cánh hoa anh đào/mẫu đơn có khía tim mềm mại & gân cánh -->
+              <g id="sakuraPetalShape">
+                <path d="M 0,0 C -34,-24 -48,-76 -22,-112 C -10,-126 -3,-122 0,-112 C 3,-122 10,-126 22,-112 C 48,-76 34,-24 0,0 Z" />
+                <path d="M 0,-8 C -6,-42 -8,-76 -4,-98" stroke="rgba(255,255,255,0.45)" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+                <path d="M 0,-8 C 6,-42 8,-76 4,-98" stroke="rgba(255,255,255,0.45)" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+              </g>
+
+              <!-- Hình dáng 1 chiếc lá xanh có gân lá -->
+              <g id="botanicalLeaf">
+                <path d="M 0,0 C -26,-25 -32,-85 0,-130 C 32,-85 26,-25 0,0 Z" fill="url(#leafGrad)" />
+                <path d="M 0,-5 L 0,-118" stroke="#dcedc8" stroke-width="1.5" stroke-linecap="round" opacity="0.65"/>
+                <path d="M 0,-45 L -12,-62 M 0,-65 L 13,-82 M 0,-85 L -10,-98" stroke="#dcedc8" stroke-width="1.2" stroke-linecap="round" opacity="0.55"/>
+              </g>
+            </defs>
+
+            <!-- TẦNG 1: Lá xanh nâng đỡ quanh bông hoa -->
+            <g class="svg-layer-leaves">
+              <use href="#botanicalLeaf" transform="rotate(38)" />
+              <use href="#botanicalLeaf" transform="rotate(115) scale(0.92)" />
+              <use href="#botanicalLeaf" transform="rotate(218)" />
+              <use href="#botanicalLeaf" transform="rotate(305) scale(0.92)" />
+            </g>
+
+            <!-- TẦNG 2: 8 Cánh hoa lớn lớp ngoài -->
+            <g class="svg-layer-outer" fill="url(#outerPetalGrad)" stroke="#fff" stroke-width="1">
+              <use href="#sakuraPetalShape" transform="rotate(0)" />
+              <use href="#sakuraPetalShape" transform="rotate(45)" />
+              <use href="#sakuraPetalShape" transform="rotate(90)" />
+              <use href="#sakuraPetalShape" transform="rotate(135)" />
+              <use href="#sakuraPetalShape" transform="rotate(180)" />
+              <use href="#sakuraPetalShape" transform="rotate(225)" />
+              <use href="#sakuraPetalShape" transform="rotate(270)" />
+              <use href="#sakuraPetalShape" transform="rotate(315)" />
+            </g>
+
+            <!-- TẦNG 3: 8 Cánh hoa lớp giữa (xoay lệch 22.5 độ tạo độ dày tự nhiên) -->
+            <g class="svg-layer-mid" fill="url(#midPetalGrad)" stroke="#fff5f8" stroke-width="1">
+              <use href="#sakuraPetalShape" transform="rotate(22.5) scale(0.78)" />
+              <use href="#sakuraPetalShape" transform="rotate(67.5) scale(0.78)" />
+              <use href="#sakuraPetalShape" transform="rotate(112.5) scale(0.78)" />
+              <use href="#sakuraPetalShape" transform="rotate(157.5) scale(0.78)" />
+              <use href="#sakuraPetalShape" transform="rotate(202.5) scale(0.78)" />
+              <use href="#sakuraPetalShape" transform="rotate(247.5) scale(0.78)" />
+              <use href="#sakuraPetalShape" transform="rotate(292.5) scale(0.78)" />
+              <use href="#sakuraPetalShape" transform="rotate(337.5) scale(0.78)" />
+            </g>
+
+            <!-- TẦNG 4: 6 Cánh hoa non lớp trong ôm lấy nhụy -->
+            <g class="svg-layer-inner" fill="url(#innerPetalGrad)" stroke="#ffffff" stroke-width="1.2">
+              <use href="#sakuraPetalShape" transform="rotate(0) scale(0.54)" />
+              <use href="#sakuraPetalShape" transform="rotate(60) scale(0.54)" />
+              <use href="#sakuraPetalShape" transform="rotate(120) scale(0.54)" />
+              <use href="#sakuraPetalShape" transform="rotate(180) scale(0.54)" />
+              <use href="#sakuraPetalShape" transform="rotate(240) scale(0.54)" />
+              <use href="#sakuraPetalShape" transform="rotate(300) scale(0.54)" />
+            </g>
+
+            <!-- TẦNG 5: Nhụy hoa vàng óng ánh và các tia nhụy -->
+            <g class="svg-layer-pistil">
+              <!-- Các sợi nhụy tỏa tròn -->
+              <g stroke="#ffd54f" stroke-width="1.6" stroke-linecap="round">
+                <line x1="0" y1="0" x2="0" y2="-32" />
+                <line x1="0" y1="0" x2="23" y2="-23" />
+                <line x1="0" y1="0" x2="32" y2="0" />
+                <line x1="0" y1="0" x2="23" y2="23" />
+                <line x1="0" y1="0" x2="0" y2="32" />
+                <line x1="0" y1="0" x2="-23" y2="23" />
+                <line x1="0" y1="0" x2="-32" y2="0" />
+                <line x1="0" y1="0" x2="-23" y2="-23" />
+                <line x1="0" y1="0" x2="12" y2="-29" />
+                <line x1="0" y1="0" x2="29" y2="-12" />
+                <line x1="0" y1="0" x2="29" y2="12" />
+                <line x1="0" y1="0" x2="12" y2="29" />
+                <line x1="0" y1="0" x2="-12" y2="29" />
+                <line x1="0" y1="0" x2="-29" y2="12" />
+                <line x1="0" y1="0" x2="-29" y2="-12" />
+                <line x1="0" y1="0" x2="-12" y2="-29" />
+              </g>
+              <!-- Đầu phấn hoa vàng sáng -->
+              <g fill="#fff59d" stroke="#f57f17" stroke-width="0.8">
+                <circle cx="0" cy="-32" r="3.5" />
+                <circle cx="23" cy="-23" r="3.5" />
+                <circle cx="32" cy="0" r="3.5" />
+                <circle cx="23" cy="23" r="3.5" />
+                <circle cx="0" cy="32" r="3.5" />
+                <circle cx="-23" cy="23" r="3.5" />
+                <circle cx="-32" cy="0" r="3.5" />
+                <circle cx="-23" cy="-23" r="3.5" />
+                <circle cx="12" cy="-29" r="3" />
+                <circle cx="29" cy="-12" r="3" />
+                <circle cx="29" cy="12" r="3" />
+                <circle cx="12" cy="29" r="3" />
+                <circle cx="-12" cy="29" r="3" />
+                <circle cx="-29" cy="12" r="3" />
+                <circle cx="-29" cy="-12" r="3" />
+                <circle cx="-12" cy="-29" r="3" />
+              </g>
+              <!-- Tâm nhụy tròn -->
+              <circle cx="0" cy="0" r="16" fill="url(#pistilGrad)" />
+              <circle cx="-4" cy="-4" r="4.5" fill="#ffffff" opacity="0.7" />
+            </g>
+          </svg>
+        </div>
+
+        <div class="flower-intro-text">
+          <span class="flower-tag">TẬP THỂ LỚP TU1E • 20/11</span>
+          <h2 class="flower-title">Đóa Hoa Tri Ân</h2>
+          <p class="flower-hint">Chạm vào bông hoa để hoa nở & mở sổ lưu bút 🌸</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= KHỐI SỔ 3D (Hiện ra từ tâm bông hoa sau khi nở) ================= -->
+    <div class="book-scene is-hidden-book" id="bookScene">
       <div class="book-3d-float" id="book3DFloat">
         <div class="book-cover-3d" id="book3D" role="button" tabindex="0" aria-label="Nhấn vào giữa sổ để mở và lật từng trang">
-          <!-- Gáy sách 3D bên trái -->
-          <div class="cover-spine"></div>
-          <!-- Độ dày xấp giấy 3D bên phải -->
-          <div class="cover-pages-edge"></div>
-          <!-- Độ dày xấp giấy 3D cạnh dưới -->
-          <div class="cover-bottom-edge"></div>
-          <!-- Mặt bìa sau 3D tạo chiều sâu -->
-          <div class="cover-back"></div>
 
-          <!-- TRANG NẰM DƯỚI (Hiện ra ngay bên dưới trong lúc tờ trên đang lật mở 3D) -->
+          <!-- Bóng đổ mặt bàn 3D -->
+          <div class="book-ground-shadow" aria-hidden="true"></div>
+
+          <!-- Gáy sách 3D bên trái -->
+          <div class="cover-spine" aria-hidden="true">
+            <span class="spine-ridge"></span>
+            <span class="spine-ridge"></span>
+            <span class="spine-ridge"></span>
+            <span class="spine-ridge"></span>
+          </div>
+
+          <!-- Độ dày xấp giấy 3D bên phải & cạnh dưới -->
+          <div class="cover-pages-edge" aria-hidden="true"></div>
+          <div class="cover-bottom-edge" aria-hidden="true"></div>
+
+          <!-- Mặt bìa sau 3D tạo chiều sâu khối -->
+          <div class="cover-back" aria-hidden="true"></div>
+
+          <!-- Các tầng xấp giấy 3D bên phải & dưới (Dày lúc đầu và vơi dần theo từng trang lật) -->
+          <div class="paper-fan-layer fan-1" aria-hidden="true"></div>
+          <div class="paper-fan-layer fan-2" aria-hidden="true"></div>
+          <div class="paper-fan-layer fan-3" aria-hidden="true"></div>
+          <div class="paper-fan-layer fan-4" aria-hidden="true"></div>
+
+          <!-- TRANG NẰM DƯỚI (Đã dựng sẵn, không gây khựng khi lật) -->
           <div class="book-sheet under-sheet" id="underSheet">
-            <div class="cover-shine"></div>
             <div class="cover-gold-corner tl"></div>
             <div class="cover-gold-corner tr"></div>
             <div class="cover-gold-corner bl"></div>
@@ -92,11 +267,9 @@
             <div class="cover-inner-frame" id="underSheetContent"></div>
           </div>
 
-          <!-- TRANG ĐANG HIỂN THỊ TRÊN CÙNG (Xoay mở 3D quanh gáy trái mỗi lần nhấn) -->
+          <!-- TRANG ĐANG HIỂN THỊ TRÊN CÙNG (Xoay mở 3D mượt quanh gáy trái) -->
           <div class="book-sheet top-sheet" id="topSheet">
-            <!-- Mặt trước của tờ đang lật -->
             <div class="sheet-face sheet-front" id="topSheetFront">
-              <div class="cover-shine"></div>
               <div class="cover-gold-corner tl"></div>
               <div class="cover-gold-corner tr"></div>
               <div class="cover-gold-corner bl"></div>
@@ -114,8 +287,8 @@
 
         </div>
       </div>
-
     </div>
+
   </main>
 
   <script src="js/script.js"></script>

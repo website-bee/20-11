@@ -359,7 +359,7 @@ function getSheetHtmlForStep(step) {
 
     return `
       <span class="cover-tag">LỜI MỞ ĐẦU • TẬP THỂ ${CLASS_CONFIG.className}</span>
-      <div>
+      <div class="page-3d-intro-header">
         <h2 class="page-3d-intro-title">${INTRO_CONTENT.title}</h2>
         <p class="page-3d-intro-sub">${INTRO_CONTENT.subtitle}</p>
       </div>
@@ -386,7 +386,7 @@ function getSheetHtmlForStep(step) {
 
     return `
       <span class="cover-tag">NGƯỜI GIEO MẦM XANH • TẬP THỂ ${CLASS_CONFIG.className}</span>
-      <div>
+      <div class="teacher-header-block">
         <h2 class="teacher-title-script">Thân gửi Thầy Trịnh Văn Sỹ</h2>
         <p class="teacher-sub-role">Người thầy đồng hành đầu tiên trên hành trình đại học của ${CLASS_CONFIG.className}</p>
       </div>
@@ -472,10 +472,12 @@ function getSheetHtmlForStep(step) {
 
   return `
     <span class="cover-tag">TRANG KẾT • KỶ NIỆM TẬP THỂ ${CLASS_CONFIG.className}</span>
-    <h2 class="ending-3d-title">Tập Thể ${CLASS_CONFIG.className} & Thầy Trịnh Văn Sỹ</h2>
-    <p class="ending-3d-sub">
-      38 trái tim – Một tấm lòng tri ân. Kính chúc Thầy luôn mạnh khỏe, hạnh phúc và mãi giữ ngọn lửa nhiệt huyết!
-    </p>
+    <div class="ending-header-block">
+      <h2 class="ending-3d-title">Tập Thể ${CLASS_CONFIG.className} & Thầy Trịnh Văn Sỹ</h2>
+      <p class="ending-3d-sub">
+        38 trái tim – Một tấm lòng tri ân. Kính chúc Thầy luôn mạnh khỏe, hạnh phúc và mãi giữ ngọn lửa nhiệt huyết!
+      </p>
+    </div>
 
     <div class="ending-collage-box">
       <div class="collage-main-polaroid">
@@ -524,50 +526,120 @@ function preloadAllImages() {
 }
 
 // ============================================================================
-// HIỆU ỨNG MỞ / LẬT SÁCH 3D CHO MỌI TRANG (TỐI ƯU TỐC ĐỘ CHO MOBILE & DESKTOP)
+// HIỆU ỨNG ĐỘ DÀY SỔ 3D VƠI DẦN THEO TỪNG TRANG LẬT (54px -> 4.5px)
 // ============================================================================
+const flowerIntroStage = document.getElementById("flowerIntroStage");
+const flowerTrigger = document.getElementById("flowerTrigger");
+let isFlowerBloomed = false;
+let preloadedNextStep = 0;
+
+// Tính tỉ lệ độ dày còn lại của quyển sổ (từ 1.0 ở bìa đầu xuống 0.08 ở trang cuối)
+function getRatioForStep(step) {
+  const totalSteps = MAX_STEP + 2; // 42 mốc (-1 -> 40)
+  const remaining = MAX_STEP - step + 1;
+  return Math.max(0.08, Math.min(1, remaining / totalSteps));
+}
+
+function updateBookThickness3D(topStep, underStep) {
+  const MAX_THICK = 54; // Độ dày tối đa 54px
+  const BASE_BACK_Z = -18;
+  const topRatio = getRatioForStep(topStep);
+  const underRatio = getRatioForStep(underStep);
+
+  const topZ = BASE_BACK_Z + MAX_THICK * topRatio;
+  const underZ = BASE_BACK_Z + MAX_THICK * underRatio;
+
+  book3D.style.setProperty("--book-ratio", underRatio.toFixed(4));
+  book3D.style.setProperty("--top-z", `${topZ.toFixed(2)}px`);
+  book3D.style.setProperty("--under-z", `${underZ.toFixed(2)}px`);
+}
+
 function renderInitialBook() {
   topSheetContent.innerHTML = getSheetHtmlForStep(currentStep);
   underSheetContent.innerHTML = getSheetHtmlForStep(0);
+  preloadedNextStep = 0;
+  updateBookThickness3D(-1, -1);
+}
+
+// Khi nhấn vào bông hoa ban đầu -> Hoa nở 3D rồi hiện ra quyển sổ
+function triggerFlowerBloomIntro() {
+  if (isFlowerBloomed) return;
+  isFlowerBloomed = true;
+
+  // Bật nhạc nền "Người Gieo Mầm Xanh" ngay khi chạm vào bông hoa
+  ensureMusicStartedOnFirstTap();
+
+  // Bước 1: Bung nở các lớp cánh hoa 3D
+  flowerIntroStage.classList.add("is-blooming");
+
+  // Bước 2: Sau khi hoa nở rộ (800ms), làm mờ hoa và đưa quyển sổ 3D hiện lên từ tâm hoa
+  setTimeout(() => {
+    flowerIntroStage.classList.add("is-fading-out");
+    bookScene.classList.remove("is-hidden-book");
+    bookScene.classList.add("is-book-emerging");
+  }, 800);
+
+  // Bước 3: Ẩn hẳn tầng hoa mở đầu để giải phóng bộ nhớ GPU
+  setTimeout(() => {
+    flowerIntroStage.classList.add("is-Done");
+  }, 1480);
 }
 
 function flipBookToStep(targetStep) {
-  if (isAnimating) return;
+  if (isAnimating || !isFlowerBloomed) return;
 
   const isForward = targetStep > currentStep || (currentStep === MAX_STEP && targetStep === -1);
   const isMobile = window.matchMedia("(max-width: 768px)").matches;
-  const flipDuration = isMobile ? 560 : 720;
+  const flipDuration = isMobile ? 540 : 640;
 
   isAnimating = true;
 
   if (isForward) {
-    underSheetContent.innerHTML = getSheetHtmlForStep(targetStep);
+    // Chỉ cập nhật underSheetContent nếu chưa được dựng sẵn (tránh lag ở frame đầu tiên)
+    if (preloadedNextStep !== targetStep) {
+      underSheetContent.innerHTML = getSheetHtmlForStep(targetStep);
+      preloadedNextStep = targetStep;
+    }
+
+    // Hạ độ dày xấp giấy xuống mức của trang kế tiếp ngay khi tờ trên bắt đầu lật mở
+    updateBookThickness3D(currentStep, targetStep);
+
     underSheet.classList.add("is-revealing");
     topSheet.classList.add("is-flipping-next");
 
     setTimeout(() => {
       currentStep = targetStep;
-      topSheetContent.innerHTML = getSheetHtmlForStep(currentStep);
+      topSheetContent.innerHTML = underSheetContent.innerHTML;
       topSheet.classList.remove("is-flipping-next");
       underSheet.classList.remove("is-revealing");
 
-      const upcoming = currentStep < MAX_STEP ? currentStep + 1 : -1;
-      underSheetContent.innerHTML = getSheetHtmlForStep(upcoming);
+      // Đồng bộ độ cao tờ trên cùng về mức độ dày hiện tại
+      updateBookThickness3D(currentStep, currentStep);
 
-      isAnimating = false;
+      // Dựng sẵn trang tiếp theo ở lúc nghỉ để lần nhấn sau mượt tức thì
+      const upcoming = currentStep < MAX_STEP ? currentStep + 1 : -1;
+      requestAnimationFrame(() => {
+        underSheetContent.innerHTML = getSheetHtmlForStep(upcoming);
+        preloadedNextStep = upcoming;
+        isAnimating = false;
+      });
     }, flipDuration);
   } else {
     underSheetContent.innerHTML = getSheetHtmlForStep(currentStep);
     topSheetContent.innerHTML = getSheetHtmlForStep(targetStep);
+    updateBookThickness3D(targetStep, targetStep);
     topSheet.classList.add("is-flipping-prev");
 
     setTimeout(() => {
       currentStep = targetStep;
       topSheet.classList.remove("is-flipping-prev");
-      const upcoming = currentStep < MAX_STEP ? currentStep + 1 : -1;
-      underSheetContent.innerHTML = getSheetHtmlForStep(upcoming);
 
-      isAnimating = false;
+      const upcoming = currentStep < MAX_STEP ? currentStep + 1 : -1;
+      requestAnimationFrame(() => {
+        underSheetContent.innerHTML = getSheetHtmlForStep(upcoming);
+        preloadedNextStep = upcoming;
+        isAnimating = false;
+      });
     }, flipDuration - 20);
   }
 }
@@ -794,8 +866,20 @@ musicToggleBtn.addEventListener("click", (e) => {
 });
 
 // ============================================================================
-// SỰ KIỆN TƯƠNG TÁC: CHẠM / VUỐT TRÊN ĐIỆN THOẠI & CLICK TRÊN MÁY TÍNH
+// SỰ KIỆN TƯƠNG TÁC: BÔNG HOA NỞ MỞ ĐẦU & LẬT SỔ 3D
 // ============================================================================
+if (flowerTrigger) {
+  flowerTrigger.addEventListener("click", () => {
+    triggerFlowerBloomIntro();
+  });
+  flowerTrigger.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      triggerFlowerBloomIntro();
+    }
+  });
+}
+
 let touchStartX = 0;
 let touchStartY = 0;
 let touchMoved = false;
@@ -856,31 +940,18 @@ book3D.addEventListener("keydown", (e) => {
 });
 
 window.addEventListener("keydown", (e) => {
+  if (!isFlowerBloomed) {
+    if (e.key === "Enter" || e.key === " " || e.key === "ArrowRight") {
+      triggerFlowerBloomIntro();
+    }
+    return;
+  }
   if (e.key === "ArrowRight") {
     advanceNextPage();
   } else if (e.key === "ArrowLeft" && currentStep > -1) {
     goPrevPage();
   }
 });
-
-// Hiệu ứng nghiêng 3D (Parallax Tilt) chỉ chạy trên thiết bị có chuột (Desktop)
-if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
-  let rafPending = false;
-  window.addEventListener("mousemove", (e) => {
-    if (rafPending) return;
-    rafPending = true;
-    const clientX = e.clientX;
-    const clientY = e.clientY;
-    requestAnimationFrame(() => {
-      const xRatio = (clientX / window.innerWidth - 0.5) * 2;
-      const yRatio = (clientY / window.innerHeight - 0.5) * 2;
-      const rotY = xRatio * 4.5;
-      const rotX = -yRatio * 3.5;
-      bookScene.style.transform = `rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg)`;
-      rafPending = false;
-    });
-  }, { passive: true });
-}
 
 // ============================================================================
 // HIỆU ỨNG CÁNH HOA ANH ĐÀO 3D RƠI TRÊN CANVAS (TỐI ƯU 60FPS CHO MOBILE)
