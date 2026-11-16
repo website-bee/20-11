@@ -506,7 +506,25 @@ function getSheetHtmlForStep(step) {
 }
 
 // ============================================================================
-// HIỆU ỨNG MỞ / LẬT SÁCH 3D CHO MỌI TRANG
+// TẢI TRƯỚC (PRELOAD & DECODE) TOÀN BỘ ẢNH ĐỂ LẬT TRANG TRÊN ĐIỆN THOẠI KHÔNG KHỰNG
+// ============================================================================
+function preloadAllImages() {
+  const allUrls = [
+    ...CLASS_CONFIG.teacherPhotos,
+    ...CLASS_CONFIG.classPhotos
+  ];
+  allUrls.forEach((rawPath) => {
+    const img = new Image();
+    img.decoding = "async";
+    img.src = encodeURI(rawPath);
+    if (img.decode) {
+      img.decode().catch(() => {});
+    }
+  });
+}
+
+// ============================================================================
+// HIỆU ỨNG MỞ / LẬT SÁCH 3D CHO MỌI TRANG (TỐI ƯU TỐC ĐỘ CHO MOBILE & DESKTOP)
 // ============================================================================
 function renderInitialBook() {
   topSheetContent.innerHTML = getSheetHtmlForStep(currentStep);
@@ -517,6 +535,9 @@ function flipBookToStep(targetStep) {
   if (isAnimating) return;
 
   const isForward = targetStep > currentStep || (currentStep === MAX_STEP && targetStep === -1);
+  const isMobile = window.matchMedia("(max-width: 768px)").matches;
+  const flipDuration = isMobile ? 560 : 720;
+
   isAnimating = true;
 
   if (isForward) {
@@ -534,7 +555,7 @@ function flipBookToStep(targetStep) {
       underSheetContent.innerHTML = getSheetHtmlForStep(upcoming);
 
       isAnimating = false;
-    }, 860);
+    }, flipDuration);
   } else {
     underSheetContent.innerHTML = getSheetHtmlForStep(currentStep);
     topSheetContent.innerHTML = getSheetHtmlForStep(targetStep);
@@ -547,18 +568,24 @@ function flipBookToStep(targetStep) {
       underSheetContent.innerHTML = getSheetHtmlForStep(upcoming);
 
       isAnimating = false;
-    }, 820);
+    }, flipDuration - 20);
   }
 }
 
 function advanceNextPage() {
-  // Tự động bật nhạc nền "Người Gieo Mầm Xanh" ở lần chạm mở sổ đầu tiên
   ensureMusicStartedOnFirstTap();
 
   if (currentStep < MAX_STEP) {
     flipBookToStep(currentStep + 1);
   } else {
     flipBookToStep(-1);
+  }
+}
+
+function goPrevPage() {
+  ensureMusicStartedOnFirstTap();
+  if (currentStep > -1) {
+    flipBookToStep(currentStep - 1);
   }
 }
 
@@ -767,9 +794,57 @@ musicToggleBtn.addEventListener("click", (e) => {
 });
 
 // ============================================================================
-// SỰ KIỆN TƯƠNG TÁC: NHẤN VÀO SỔ 3D ĐỂ MỞ VÀ LẬT TỪNG TRANG
+// SỰ KIỆN TƯƠNG TÁC: CHẠM / VUỐT TRÊN ĐIỆN THOẠI & CLICK TRÊN MÁY TÍNH
 // ============================================================================
+let touchStartX = 0;
+let touchStartY = 0;
+let touchMoved = false;
+let suppressNextClick = false;
+
+book3D.addEventListener("touchstart", (e) => {
+  if (!e.touches || e.touches.length === 0) return;
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+  touchMoved = false;
+}, { passive: true });
+
+book3D.addEventListener("touchmove", (e) => {
+  if (!e.touches || e.touches.length === 0) return;
+  const dx = Math.abs(e.touches[0].clientX - touchStartX);
+  const dy = Math.abs(e.touches[0].clientY - touchStartY);
+  if (dx > 12 || dy > 12) {
+    touchMoved = true;
+  }
+}, { passive: true });
+
+book3D.addEventListener("touchend", (e) => {
+  if (!e.changedTouches || e.changedTouches.length === 0) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+
+  // Nếu vuốt ngang (Swipe trái / phải trên điện thoại)
+  if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.25) {
+    suppressNextClick = true;
+    if (dx < 0) {
+      advanceNextPage();
+    } else {
+      goPrevPage();
+    }
+    return;
+  }
+
+  // Nếu chỉ chạm nhẹ (Tap) chứ không phải đang vuốt cuộn dọc đọc chữ
+  if (!touchMoved) {
+    suppressNextClick = true;
+    advanceNextPage();
+  }
+}, { passive: true });
+
 book3D.addEventListener("click", () => {
+  if (suppressNextClick) {
+    suppressNextClick = false;
+    return;
+  }
   advanceNextPage();
 });
 
@@ -784,22 +859,31 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "ArrowRight") {
     advanceNextPage();
   } else if (e.key === "ArrowLeft" && currentStep > -1) {
-    flipBookToStep(currentStep - 1);
+    goPrevPage();
   }
 });
 
-// Hiệu ứng nghiêng 3D (Parallax Tilt) nhẹ nhàng theo chuột trên máy tính
-window.addEventListener("mousemove", (e) => {
-  if (window.matchMedia("(max-width: 860px)").matches) return;
-  const xRatio = (e.clientX / window.innerWidth - 0.5) * 2;
-  const yRatio = (e.clientY / window.innerHeight - 0.5) * 2;
-  const rotY = xRatio * 4.5;
-  const rotX = -yRatio * 3.5;
-  bookScene.style.transform = `rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg)`;
-});
+// Hiệu ứng nghiêng 3D (Parallax Tilt) chỉ chạy trên thiết bị có chuột (Desktop)
+if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+  let rafPending = false;
+  window.addEventListener("mousemove", (e) => {
+    if (rafPending) return;
+    rafPending = true;
+    const clientX = e.clientX;
+    const clientY = e.clientY;
+    requestAnimationFrame(() => {
+      const xRatio = (clientX / window.innerWidth - 0.5) * 2;
+      const yRatio = (clientY / window.innerHeight - 0.5) * 2;
+      const rotY = xRatio * 4.5;
+      const rotX = -yRatio * 3.5;
+      bookScene.style.transform = `rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg)`;
+      rafPending = false;
+    });
+  }, { passive: true });
+}
 
 // ============================================================================
-// HIỆU ỨNG CÁNH HOA ANH ĐÀO 3D RƠI TRÊN CANVAS
+// HIỆU ỨNG CÁNH HOA ANH ĐÀO 3D RƠI TRÊN CANVAS (TỐI ƯU 60FPS CHO MOBILE)
 // ============================================================================
 function initPetalCanvas() {
   const canvas = document.getElementById("petalCanvas");
@@ -812,23 +896,24 @@ function initPetalCanvas() {
   window.addEventListener("resize", () => {
     width = canvas.width = window.innerWidth;
     height = canvas.height = window.innerHeight;
-  });
+  }, { passive: true });
 
-  const PETAL_COUNT = 32;
+  const isMobile = window.matchMedia("(max-width: 768px)").matches;
+  const PETAL_COUNT = isMobile ? 14 : 28;
   const petals = Array.from({ length: PETAL_COUNT }, () => createPetal(width, height, true));
 
   function createPetal(w, h, randomY = false) {
     return {
       x: Math.random() * w,
       y: randomY ? Math.random() * h : -25,
-      size: 7 + Math.random() * 9,
-      speedY: 0.65 + Math.random() * 1.15,
-      speedX: -0.45 + Math.random() * 0.9,
+      size: 7 + Math.random() * 8,
+      speedY: 0.65 + Math.random() * 1.1,
+      speedX: -0.4 + Math.random() * 0.8,
       rotZ: Math.random() * Math.PI * 2,
-      rotSpeedZ: (Math.random() - 0.5) * 0.025,
+      rotSpeedZ: (Math.random() - 0.5) * 0.022,
       flipPhase: Math.random() * Math.PI * 2,
-      flipSpeed: 0.02 + Math.random() * 0.03,
-      opacity: 0.45 + Math.random() * 0.4,
+      flipSpeed: 0.02 + Math.random() * 0.025,
+      opacity: 0.45 + Math.random() * 0.38,
       hueType: Math.floor(Math.random() * 3)
     };
   }
@@ -857,18 +942,20 @@ function initPetalCanvas() {
   }
 
   function animatePetals() {
-    ctx.clearRect(0, 0, width, height);
-    for (let i = 0; i < petals.length; i++) {
-      const p = petals[i];
-      p.y += p.speedY;
-      p.x += p.speedX + Math.sin(p.flipPhase) * 0.35;
-      p.rotZ += p.rotSpeedZ;
-      p.flipPhase += p.flipSpeed;
+    if (!document.hidden) {
+      ctx.clearRect(0, 0, width, height);
+      for (let i = 0; i < petals.length; i++) {
+        const p = petals[i];
+        p.y += p.speedY;
+        p.x += p.speedX + Math.sin(p.flipPhase) * 0.35;
+        p.rotZ += p.rotSpeedZ;
+        p.flipPhase += p.flipSpeed;
 
-      if (p.y > height + 25 || p.x < -30 || p.x > width + 30) {
-        petals[i] = createPetal(width, height, false);
+        if (p.y > height + 25 || p.x < -30 || p.x > width + 30) {
+          petals[i] = createPetal(width, height, false);
+        }
+        drawPetal(p);
       }
-      drawPetal(p);
     }
     requestAnimationFrame(animatePetals);
   }
@@ -878,4 +965,5 @@ function initPetalCanvas() {
 
 // Khởi chạy
 renderInitialBook();
+preloadAllImages();
 initPetalCanvas();

@@ -1,6 +1,6 @@
 /* ==========================================================================
    SỔ LƯU BÚT TRI ÂN 20/11 - TẬP THỂ TU1E KÍNH GỬI THẦY TRỊNH VĂN SỸ
-   Thiết kế: Khối Sổ 3D Nghiêng Đồng Nhất & Hiệu Ứng Mở / Lật Trang 3D
+   Thiết kế: Khối Sổ 3D Nghiêng Đồng Nhất & Tối Ưu Mượt 60FPS Cho Điện Thoại
    ========================================================================== */
 
 :root {
@@ -17,7 +17,7 @@
   --text-dark: #4a2535;
   --text-body: #5c3344;
   --text-muted: #966579;
-  --shadow-book: 0 28px 65px rgba(136, 38, 77, 0.25), 0 8px 24px rgba(136, 38, 77, 0.15);
+  --shadow-book: 0 26px 56px rgba(136, 38, 77, 0.24), 0 8px 20px rgba(136, 38, 77, 0.14);
 }
 
 * {
@@ -30,6 +30,7 @@
 html, body {
   width: 100%;
   height: 100%;
+  height: 100dvh;
   overflow: hidden;
   font-family: 'Be Vietnam Pro', sans-serif;
   color: var(--text-dark);
@@ -38,6 +39,9 @@ html, body {
     radial-gradient(circle at 82% 80%, rgba(244, 143, 177, 0.35) 0%, transparent 50%),
     linear-gradient(135deg, var(--bg-blush-1) 0%, var(--bg-blush-2) 52%, var(--bg-blush-3) 100%);
   user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  overscroll-behavior: none;
 }
 
 body {
@@ -66,8 +70,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.92);
   border: 1.5px solid rgba(216, 58, 118, 0.35);
   color: var(--rose-deep);
   padding: 7px 14px;
@@ -76,18 +79,18 @@ body {
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 6px 18px rgba(184, 37, 95, 0.16);
-  transition: all 0.25s ease;
+  box-shadow: 0 6px 16px rgba(184, 37, 95, 0.15);
+  transition: transform 0.2s ease, background 0.2s ease;
+  touch-action: manipulation;
 }
 
 .music-floating-btn:hover {
   transform: translateY(-2px);
   background: #fff;
-  box-shadow: 0 8px 22px rgba(184, 37, 95, 0.24);
 }
 
 .music-floating-btn.is-playing {
-  background: linear-gradient(135deg, rgba(252, 228, 236, 0.95), rgba(248, 187, 208, 0.92));
+  background: linear-gradient(135deg, #fce4ec, #f8bbd0);
   border-color: var(--rose-primary);
 }
 
@@ -116,9 +119,9 @@ body {
 
 .corner-floral {
   position: absolute;
-  width: clamp(160px, 24vw, 290px);
-  height: clamp(160px, 24vw, 290px);
-  filter: drop-shadow(0 10px 18px rgba(184, 37, 95, 0.12));
+  width: clamp(140px, 23vw, 280px);
+  height: clamp(140px, 23vw, 280px);
+  will-change: transform;
   animation: swayFloral 7s ease-in-out infinite alternate;
 }
 
@@ -179,15 +182,16 @@ body {
   align-items: center;
   justify-content: center;
   transform-style: preserve-3d;
+  will-change: transform;
   animation: bookFloatIdle 4.5s ease-in-out infinite alternate;
 }
 
 @keyframes bookFloatIdle {
   0% {
-    transform: translateY(0px) rotateX(5deg) rotateY(-10deg);
+    transform: translate3d(0, 0px, 0) rotateX(5deg) rotateY(-10deg);
   }
   100% {
-    transform: translateY(-10px) rotateX(8deg) rotateY(-5deg);
+    transform: translate3d(0, -10px, 0) rotateX(8deg) rotateY(-5deg);
   }
 }
 
@@ -197,11 +201,14 @@ body {
   height: min(760px, 90vh);
   transform-style: preserve-3d;
   cursor: pointer;
-  transition: transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+  touch-action: manipulation;
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.book-cover-3d:hover {
-  transform: rotateY(-13deg) rotateX(5deg) scale(1.015);
+@media (hover: hover) and (pointer: fine) {
+  .book-cover-3d:hover {
+    transform: rotateY(-13deg) rotateX(5deg) scale(1.015);
+  }
 }
 
 /* Gáy sách 3D bên trái */
@@ -214,6 +221,7 @@ body {
   background: linear-gradient(90deg, #a8285a 0%, #d44d82 50%, #99204f 100%);
   transform: rotateY(-90deg);
   border-radius: 4px 0 0 4px;
+  backface-visibility: hidden;
 }
 
 /* Độ dày xấp giấy 3D bên phải */
@@ -231,7 +239,8 @@ body {
     #f0cedb 4px
   );
   transform: rotateY(90deg);
-  box-shadow: inset 0 0 8px rgba(140, 50, 80, 0.25);
+  box-shadow: inset 0 0 8px rgba(140, 50, 80, 0.22);
+  backface-visibility: hidden;
 }
 
 /* Độ dày xấp giấy 3D cạnh dưới */
@@ -249,6 +258,7 @@ body {
     #ebd0da 4px
   );
   transform: rotateX(-90deg);
+  backface-visibility: hidden;
 }
 
 /* Mặt bìa sau 3D tạo độ dày và bóng đổ */
@@ -258,7 +268,8 @@ body {
   border-radius: 6px 18px 18px 6px;
   background: #c73c73;
   transform: translateZ(-16px);
-  box-shadow: 0 32px 62px rgba(105, 19, 53, 0.36);
+  box-shadow: 0 30px 56px rgba(105, 19, 53, 0.34);
+  backface-visibility: hidden;
 }
 
 /* ==========================================================================
@@ -285,31 +296,38 @@ body {
   flex-direction: column;
   transform: translateZ(14px);
   overflow: hidden;
+  backface-visibility: hidden;
+}
+
+.under-sheet .cover-shine {
+  display: none;
 }
 
 .under-sheet-shadow {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgba(110, 18, 54, 0.28) 0%, rgba(110, 18, 54, 0.08) 45%, transparent 100%);
+  background: linear-gradient(90deg, rgba(110, 18, 54, 0.26) 0%, rgba(110, 18, 54, 0.06) 45%, transparent 100%);
   opacity: 0;
   pointer-events: none;
   z-index: 5;
+  will-change: opacity;
 }
 
 .under-sheet.is-revealing .under-sheet-shadow {
-  animation: underShadowFade 0.85s ease-out forwards;
+  animation: underShadowFade 0.72s ease-out forwards;
 }
 
 @keyframes underShadowFade {
-  0% { opacity: 0.9; }
+  0% { opacity: 0.88; }
   100% { opacity: 0; }
 }
 
 /* Tờ nằm trên cùng (xoay mở 3D quanh gáy trái mỗi lần nhấn) */
 .top-sheet {
   transform-origin: left center;
-  transform: translateZ(18px) rotateY(0deg);
+  transform: translate3d(0, 0, 18px) rotateY(0deg);
   z-index: 6;
+  will-change: transform, opacity;
 }
 
 .sheet-face {
@@ -368,42 +386,42 @@ body {
 
 /* HOẠT ẢNH 3D MỞ / LẬT SÁCH CHO MỌI TRANG */
 .top-sheet.is-flipping-next {
-  animation: pageSwingOpen3D 0.86s cubic-bezier(0.645, 0.045, 0.355, 1) forwards;
+  animation: pageSwingOpen3D 0.72s cubic-bezier(0.645, 0.045, 0.355, 1) forwards;
   pointer-events: none;
 }
 
 @keyframes pageSwingOpen3D {
   0% {
-    transform: translateZ(18px) rotateY(0deg);
+    transform: translate3d(0, 0, 18px) rotateY(0deg);
     opacity: 1;
   }
   65% {
-    transform: translateZ(24px) rotateY(-120deg);
+    transform: translate3d(0, 0, 22px) rotateY(-120deg);
     opacity: 0.96;
   }
   100% {
-    transform: translateZ(18px) rotateY(-172deg);
+    transform: translate3d(0, 0, 18px) rotateY(-172deg);
     opacity: 0;
   }
 }
 
-/* Hoạt ảnh lật ngược trang về trước (khi bấm mũi tên trái) */
+/* Hoạt ảnh lật ngược trang về trước */
 .top-sheet.is-flipping-prev {
-  animation: pageSwingClose3D 0.82s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: pageSwingClose3D 0.68s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   pointer-events: none;
 }
 
 @keyframes pageSwingClose3D {
   0% {
-    transform: translateZ(18px) rotateY(-170deg);
+    transform: translate3d(0, 0, 18px) rotateY(-170deg);
     opacity: 0;
   }
   35% {
-    transform: translateZ(24px) rotateY(-110deg);
+    transform: translate3d(0, 0, 22px) rotateY(-110deg);
     opacity: 0.96;
   }
   100% {
-    transform: translateZ(18px) rotateY(0deg);
+    transform: translate3d(0, 0, 18px) rotateY(0deg);
     opacity: 1;
   }
 }
@@ -414,20 +432,20 @@ body {
   inset: -40%;
   background: linear-gradient(
     115deg,
-    transparent 35%,
-    rgba(255, 255, 255, 0.55) 48%,
-    rgba(255, 255, 255, 0.15) 54%,
-    transparent 65%
+    transparent 36%,
+    rgba(255, 255, 255, 0.52) 48%,
+    rgba(255, 255, 255, 0.14) 54%,
+    transparent 64%
   );
-  transform: translateX(-60%) rotate(10deg);
-  animation: coverShimmer 5.5s ease-in-out infinite;
+  transform: translate3d(-60%, 0, 0) rotate(10deg);
+  animation: coverShimmer 6s ease-in-out infinite;
   pointer-events: none;
   z-index: 3;
 }
 
 @keyframes coverShimmer {
-  0%, 25% { transform: translateX(-65%) rotate(10deg); }
-  75%, 100% { transform: translateX(65%) rotate(10deg); }
+  0%, 25% { transform: translate3d(-65%, 0, 0) rotate(10deg); }
+  75%, 100% { transform: translate3d(65%, 0, 0) rotate(10deg); }
 }
 
 /* Góc mạ vàng cổ điển */
@@ -445,14 +463,13 @@ body {
 .cover-gold-corner.bl { bottom: 9px; left: 15px; border-right: none; border-top: none; border-bottom-left-radius: 6px; }
 .cover-gold-corner.br { bottom: 9px; right: 9px; border-left: none; border-top: none; border-bottom-right-radius: 10px; }
 
-/* Khung nội dung bên trong mỗi trang sổ 3D */
+/* Khung nội dung bên trong mỗi trang sổ 3D (Bỏ backdrop-filter để GPU điện thoại mượt 60fps) */
 .cover-inner-frame {
   flex: 1;
   height: 100%;
   border: 1.5px double rgba(184, 37, 95, 0.32);
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.68);
-  backdrop-filter: blur(4px);
+  background: rgba(255, 255, 255, 0.82);
   padding: 18px 22px;
   display: flex;
   flex-direction: column;
@@ -552,14 +569,14 @@ body {
   background: radial-gradient(circle at 35% 30%, #ff80ab 0%, #d81b60 62%, #880e4f 100%);
   border: 3px dashed rgba(255, 224, 130, 0.88);
   box-shadow:
-    0 8px 20px rgba(184, 37, 95, 0.38),
+    0 8px 18px rgba(184, 37, 95, 0.35),
     inset 0 2px 6px rgba(255, 255, 255, 0.5);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   color: #fff;
-  animation: pulseSeal 2.2s ease-in-out infinite;
+  animation: pulseSeal 2.4s ease-in-out infinite;
   transition: transform 0.25s ease;
 }
 
@@ -568,13 +585,9 @@ body {
   height: 60px;
 }
 
-.book-cover-3d:hover .wax-seal {
-  transform: scale(1.08) rotate(5deg);
-}
-
 @keyframes pulseSeal {
-  0%, 100% { box-shadow: 0 8px 20px rgba(184, 37, 95, 0.38), 0 0 0 0 rgba(240, 98, 146, 0.5); }
-  50% { box-shadow: 0 10px 24px rgba(184, 37, 95, 0.52), 0 0 0 11px rgba(240, 98, 146, 0); }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
 }
 
 .seal-icon {
@@ -623,6 +636,7 @@ body {
   flex: 1;
   width: 100%;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 6px 10px;
   font-family: 'Cormorant Garamond', serif;
   font-size: clamp(0.96rem, 2.4vw, 1.1rem);
@@ -678,8 +692,8 @@ body {
   gap: 16px;
   width: 100%;
   flex: 1;
-  min-height: 220px;
-  padding: 10px 6px;
+  min-height: 190px;
+  padding: 8px 6px;
 }
 
 .teacher-polaroid {
@@ -691,9 +705,7 @@ body {
   padding: 8px 8px 26px;
   border-radius: 10px;
   border: 1px solid rgba(216, 58, 118, 0.32);
-  box-shadow:
-    0 12px 24px rgba(156, 32, 82, 0.16),
-    0 3px 8px rgba(156, 32, 82, 0.08);
+  box-shadow: 0 10px 20px rgba(156, 32, 82, 0.14);
   display: flex;
   flex-direction: column;
 }
@@ -746,7 +758,7 @@ body {
 .teacher-dedication-note {
   width: 100%;
   padding: 10px 14px;
-  background: rgba(255, 250, 252, 0.9);
+  background: rgba(255, 250, 252, 0.92);
   border-radius: 10px;
   border: 1px dashed rgba(216, 58, 118, 0.35);
   font-family: 'Cormorant Garamond', serif;
@@ -771,9 +783,8 @@ body {
 }
 
 .wish-mini-flower-svg {
-  width: 58px;
-  height: 58px;
-  filter: drop-shadow(0 4px 8px rgba(216, 58, 118, 0.18));
+  width: 56px;
+  height: 56px;
   flex-shrink: 0;
 }
 
@@ -797,10 +808,9 @@ body {
 .wish-3d-paper-box {
   flex: 1;
   width: 100%;
-  background: rgba(255, 253, 249, 0.94);
+  background: rgba(255, 253, 249, 0.95);
   border-radius: 10px;
   border: 1px solid rgba(216, 58, 118, 0.24);
-  box-shadow: inset 0 2px 10px rgba(184, 37, 95, 0.06);
   padding: 12px 16px;
   margin: 6px 0;
   display: flex;
@@ -808,6 +818,7 @@ body {
   justify-content: space-between;
   text-align: left;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   background-image: repeating-linear-gradient(
     to bottom,
@@ -879,18 +890,18 @@ body {
 .collage-main-polaroid {
   position: relative;
   flex: 1.15;
-  min-height: 140px;
+  min-height: 135px;
   background: #fff;
   padding: 7px 7px 24px;
   border-radius: 10px;
   border: 1px solid rgba(216, 58, 118, 0.32);
-  box-shadow: 0 10px 22px rgba(163, 36, 84, 0.14);
+  box-shadow: 0 8px 18px rgba(163, 36, 84, 0.12);
   overflow: hidden;
 }
 
 .collage-sub-row {
   flex: 1;
-  min-height: 115px;
+  min-height: 110px;
   display: flex;
   gap: 10px;
 }
@@ -902,7 +913,7 @@ body {
   padding: 6px 6px 20px;
   border-radius: 9px;
   border: 1px solid rgba(216, 58, 118, 0.3);
-  box-shadow: 0 8px 18px rgba(163, 36, 84, 0.12);
+  box-shadow: 0 6px 14px rgba(163, 36, 84, 0.1);
   overflow: hidden;
 }
 
@@ -933,10 +944,46 @@ body {
   color: var(--rose-deep);
 }
 
-@media (max-width: 600px) {
+/* ==========================================================================
+   TỐI ƯU HIỆU NĂNG & HIỂN THỊ MƯỢT CHO ĐIỆN THOẠI (<= 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+  .stage-wrapper {
+    padding: 10px;
+    perspective: 1600px;
+  }
+
+  /* Giảm biên độ dao động 3D trên điện thoại để GPU xử lý nhẹ nhàng, sắc nét */
+  @keyframes bookFloatIdle {
+    0% {
+      transform: translate3d(0, 0px, 0) rotateX(3deg) rotateY(-6deg);
+    }
+    100% {
+      transform: translate3d(0, -5px, 0) rotateX(5deg) rotateY(-3deg);
+    }
+  }
+
+  /* Tắt hiệu ứng vệt sáng quét liên tục trên điện thoại để tiết kiệm pin & mượt 60fps */
+  .cover-shine {
+    display: none;
+  }
+
+  /* Tốc độ lật trang nhanh, nhạy hơn trên màn hình cảm ứng */
+  .top-sheet.is-flipping-next {
+    animation-duration: 0.56s;
+  }
+
+  .top-sheet.is-flipping-prev {
+    animation-duration: 0.54s;
+  }
+
+  .under-sheet.is-revealing .under-sheet-shadow {
+    animation-duration: 0.56s;
+  }
+
   .book-cover-3d {
-    width: 92vw;
-    height: 86vh;
+    width: min(440px, 91vw);
+    height: min(650px, 84dvh);
   }
 
   .sheet-front,
@@ -945,53 +992,163 @@ body {
   }
 
   .cover-inner-frame {
-    padding: 11px 12px;
+    padding: 12px 13px;
+  }
+
+  .cover-floral-wreath {
+    max-width: 195px;
   }
 
   .cover-tag {
-    font-size: 0.68rem;
-    padding: 4px 12px;
+    font-size: 0.66rem;
+    padding: 4px 11px;
+  }
+
+  .cover-title {
+    font-size: clamp(2.2rem, 8vw, 2.75rem);
+  }
+
+  .cover-date {
+    font-size: 1.08rem;
+  }
+
+  .cover-quote {
+    font-size: 1rem;
+  }
+
+  .wax-seal {
+    width: 64px;
+    height: 64px;
+  }
+
+  .wax-seal.seal-compact {
+    width: 50px;
+    height: 50px;
+  }
+
+  .open-hint {
+    font-size: 0.72rem;
+  }
+
+  .page-3d-intro-title {
+    font-size: 1.24rem;
+  }
+
+  .page-3d-intro-sub {
+    font-size: 1.18rem;
   }
 
   .page-3d-intro-body {
     font-size: 0.92rem;
-    line-height: 1.44;
+    line-height: 1.42;
+    padding: 4px 6px;
+    gap: 5px;
+  }
+
+  .page-3d-intro-closing {
+    font-size: 1.14rem;
+    padding: 5px 8px;
+  }
+
+  .teacher-title-script {
+    font-size: 1.72rem;
+  }
+
+  .teacher-sub-role {
+    font-size: 0.9rem;
+  }
+
+  .teacher-photos-duo {
+    gap: 10px;
+    min-height: 155px;
+    padding: 6px 2px;
   }
 
   .teacher-polaroid {
-    max-height: 235px;
+    max-height: 225px;
+    padding: 6px 6px 22px;
+  }
+
+  .teacher-polaroid-label {
+    font-size: 0.88rem;
+  }
+
+  .teacher-dedication-note {
+    font-size: 0.92rem;
+    padding: 7px 10px;
+    line-height: 1.36;
+  }
+
+  .wish-mini-flower-svg {
+    width: 44px;
+    height: 44px;
+  }
+
+  .wish-3d-sender-title {
+    font-size: 1.35rem;
+  }
+
+  .wish-3d-theme-sub {
+    font-size: 0.7rem;
   }
 
   .wish-3d-paper-box {
     padding: 8px 12px;
+    margin: 4px 0;
     background-image: repeating-linear-gradient(
       to bottom,
       transparent 0px,
-      transparent 25px,
-      var(--paper-line) 25px,
-      var(--paper-line) 26px
+      transparent 24px,
+      var(--paper-line) 24px,
+      var(--paper-line) 25px
     );
-    line-height: 26px;
+    line-height: 25px;
   }
 
   .wish-salutation {
-    font-size: 1.26rem;
-    line-height: 26px;
+    font-size: 1.24rem;
+    line-height: 25px;
   }
 
   .wish-text-content {
-    font-size: 1.02rem;
-    line-height: 26px;
+    font-size: 0.98rem;
+    line-height: 25px;
   }
 
   .wish-signature-line {
-    font-size: 1.2rem;
-    line-height: 26px;
+    font-size: 1.16rem;
+    line-height: 25px;
   }
 
-  .wax-seal.seal-compact {
-    width: 52px;
-    height: 52px;
+  .ending-3d-title {
+    font-size: 1.65rem;
+  }
+
+  .ending-3d-sub {
+    font-size: 0.88rem;
+    line-height: 1.3;
+  }
+
+  .ending-collage-box {
+    gap: 6px;
+  }
+
+  .collage-main-polaroid {
+    min-height: 105px;
+    padding: 5px 5px 18px;
+  }
+
+  .collage-sub-row {
+    min-height: 85px;
+    gap: 6px;
+  }
+
+  .collage-sub-polaroid {
+    padding: 4px 4px 16px;
+  }
+
+  .collage-caption {
+    font-size: 0.82rem;
   }
 
   .music-floating-btn {
